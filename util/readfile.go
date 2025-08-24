@@ -3,14 +3,14 @@ package util
 import (
 	"bufio"
 	"io"
+	"iter"
 	"os"
 )
 
 type AsciiLine []rune
 
 type InmemFile struct {
-	buf     []AsciiLine
-	linePtr int
+	buf []AsciiLine
 }
 
 func NewInmemFile(inpFilePath string) (*InmemFile, error) {
@@ -36,17 +36,22 @@ func NewInmemFile(inpFilePath string) (*InmemFile, error) {
 	return inf, nil
 }
 
-func (inf *InmemFile) HasNext() bool {
-	return inf.linePtr < len(inf.buf)
+func (al AsciiLine) ColsRunes() iter.Seq2[int, rune] {
+	return func(yield func(int, rune) bool) {
+		for i, r := range al {
+			if !yield(i, r) {
+				return
+			}
+		}
+	}
 }
 
-func (inf *InmemFile) GetNext() AsciiLine {
-	if inf.linePtr >= len(inf.buf) {
-		return nil
+func (inf *InmemFile) RowsLines() iter.Seq2[int, AsciiLine] {
+	return func(yield func(int, AsciiLine) bool) {
+		for i, l := range inf.buf {
+			if !yield(i, l) {
+				return
+			}
+		}
 	}
-
-	line := inf.buf[inf.linePtr]
-	inf.linePtr++
-
-	return line
 }
