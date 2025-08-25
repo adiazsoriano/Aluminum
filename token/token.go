@@ -16,16 +16,20 @@ type LogicalType uint64
 type DelimType uint64
 
 type Token struct {
-	t        TokenType
-	sub      TokenSubType
-	data     TokenContent
-	filename string
-	line     uint64
-	col      uint64
+	Type     TokenType
+	SubT     TokenSubType
+	Data     TokenContent
+	Filename string
+	Line     uint64
+	Col      uint64
+}
+
+type TokenInfo struct {
+	Name  string
+	Value string
 }
 
 type Tokens []Token
-type TokenFile []Tokens
 
 const (
 	INVALIDSUB TokenSubType = 0
@@ -40,6 +44,7 @@ const (
 	MINUS    ArithType = 201
 	DIVIDE   ArithType = 202
 	MULTIPLY ArithType = 203
+	MODULO   ArithType = 204
 
 	EQUAL           CompareType = 300
 	NOT_EQUAL       CompareType = 301
@@ -48,11 +53,13 @@ const (
 	GREATER_THAN_EQ CompareType = 304
 	LESS_THAN_EQ    CompareType = 305
 
-	FN    KeywordType = 400 //func
-	ST    KeywordType = 401 //struct
-	IF    KeywordType = 402
-	FOR   KeywordType = 403
-	WHILE KeywordType = 404
+	FN     KeywordType = 400 //func
+	ST     KeywordType = 401 //struct
+	IF     KeywordType = 402
+	ELSE   KeywordType = 403
+	ELSEIF KeywordType = 404
+	FOR    KeywordType = 405
+	WHILE  KeywordType = 406
 
 	INTLIT    LiteralType = 500
 	FLOATLIT  LiteralType = 501
@@ -85,23 +92,213 @@ const (
 	EOF     TokenType = 99
 )
 
-var TokenTypeNames = map[TokenType]string{
-	INVALID: "INVALID",
-	VARTYPE: "VARTYPE",
-	IDENT:   "IDENTIFIER",
-	LITERAL: "LITERAL",
-	ASSIGN:  "ASSIGNMENT",
-	ARITH:   "ARITHMETIC",
-	COMPARE: "COMPARE",
-	KEYWORD: "KEYWORD",
-	LOGICAL: "LOGICAL",
-	DELIM:   "DELIMITER",
-	COMMA:   "COMMA",
-	SEMI:    "SEMICOLON",
-	EOF:     "EOF",
+var tokenSubTypeInfo = map[TokenSubType]TokenInfo{
+	INVALIDSUB: {
+		Name: "INVALID SUBTYPE",
+	},
+	NOSUB: {
+		Name: "NO SUBTYPE",
+	},
 }
 
-var TokenSubTypeNames = map[TokenSubType]string{
-	INVALIDSUB: "INVALIDSUBTYPE",
-	NOSUB:      "NOSUBTYPE",
+var varTypeInfo = map[VarType]TokenInfo{
+	INTTYPE: {
+		Name:  "INT TYPE",
+		Value: "int",
+	},
+	FLOATTYPE: {
+		Name:  "FLOAT TYPE",
+		Value: "float",
+	},
+	BOOLTYPE: {
+		Name:  "BOOL TYPE",
+		Value: "bool",
+	},
+	STRINGTYPE: {
+		Name:  "STRING TYPE",
+		Value: "string",
+	},
+}
+
+var arithTypeInfo = map[ArithType]TokenInfo{
+	PLUS: {
+		Name:  "PLUS",
+		Value: "+",
+	},
+	MINUS: {
+		Name:  "MINUS",
+		Value: "-",
+	},
+	DIVIDE: {
+		Name:  "DIVIDE",
+		Value: "/",
+	},
+	MULTIPLY: {
+		Name:  "MULTIPLY",
+		Value: "*",
+	},
+	MODULO: {
+		Name:  "MODULO",
+		Value: "%",
+	},
+}
+
+var compareTypeInfo = map[CompareType]TokenInfo{
+	EQUAL: {
+		Name:  "EQUAL",
+		Value: "==",
+	},
+	NOT_EQUAL: {
+		Name:  "NOT EQUAL",
+		Value: "!=",
+	},
+	GREATER_THAN: {
+		Name:  "GREATER THAN",
+		Value: ">",
+	},
+	LESS_THAN: {
+		Name:  "LESS THAN",
+		Value: "<",
+	},
+	GREATER_THAN_EQ: {
+		Name:  "GREATER THAN OR EQUAL",
+		Value: ">=",
+	},
+	LESS_THAN_EQ: {
+		Name:  "LESS THAN OR EQUAL",
+		Value: "<=",
+	},
+}
+
+var keywordTypeInfo = map[KeywordType]TokenInfo{
+	FN: {
+		Name:  "FUNCTION",
+		Value: "func",
+	},
+	ST: {
+		Name:  "STRUCT",
+		Value: "struct",
+	},
+	IF: {
+		Name:  "IF",
+		Value: "if",
+	},
+	ELSE: {
+		Name:  "ELSE",
+		Value: "else",
+	},
+	ELSEIF: {
+		Name:  "ELSEIF",
+		Value: "elseif",
+	},
+	FOR: {
+		Name:  "FOR",
+		Value: "for",
+	},
+	WHILE: {
+		Name:  "WHILE",
+		Value: "while",
+	},
+}
+
+var literalTypeInfo = map[LiteralType]TokenInfo{
+	INTLIT: {
+		Name: "INT LTIERAL",
+	},
+	FLOATLIT: {
+		Name: "FLOAT LITERAL",
+	},
+	BOOLLIT: {
+		Name: "BOOL LITERAL",
+	},
+	STRINGLIT: {
+		Name: "STRING LITERAL",
+	},
+}
+
+var logicalTypeInfo = map[LogicalType]TokenInfo{
+	AND: {
+		Name:  "AND",
+		Value: "&&",
+	},
+	OR: {
+		Name:  "OR",
+		Value: "||",
+	},
+	NOT: {
+		Name:  "NOT",
+		Value: "!",
+	},
+}
+
+var delimTypeInfo = map[DelimType]TokenInfo{
+	LBRACE: {
+		Name:  "LEFT BRACE",
+		Value: "{",
+	},
+	RBRACE: {
+		Name:  "RIGHT BRACE",
+		Value: "}",
+	},
+	LBRACKET: {
+		Name:  "LEFT BRACKET",
+		Value: "[",
+	},
+	RBRACKET: {
+		Name:  "RIGHT BRACKET",
+		Value: "]",
+	},
+	LPAREN: {
+		Name:  "LEFT PARENTHESIS",
+		Value: "(",
+	},
+	RPAREN: {
+		Name:  "RIGHT PARENTHESIS",
+		Value: ")",
+	},
+}
+
+var tokenTypeInfo = map[TokenType]TokenInfo{
+	INVALID: {
+		Name: "INVALID",
+	},
+	VARTYPE: {
+		Name: "VARTYPE",
+	},
+	IDENT: {
+		Name: "IDENTIFIER",
+	},
+	LITERAL: {
+		Name: "LITERAL",
+	},
+	ASSIGN: {
+		Name:  "ASSIGNMENT",
+		Value: "=",
+	},
+	ARITH: {
+		Name: "ARITHMETIC",
+	},
+	COMPARE: {
+		Name: "COMPARE",
+	},
+	KEYWORD: {
+		Name: "KEYWORD",
+	},
+	LOGICAL: {
+		Name: "LOGICAL",
+	},
+	DELIM: {
+		Name: "DELIMITER",
+	},
+	COMMA: {
+		Name:  "COMMA",
+		Value: ",",
+	},
+	SEMI: {
+		Name:  "SEMICOLON",
+		Value: ";",
+	},
+	EOF: {
+		Name: "EOF",
+	},
 }
